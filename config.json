@@ -1,0 +1,24 @@
+{
+    "excludes": [
+    ],
+
+    "email": {
+        "server": "smtp.gmail.com",
+        "port": 587,
+        "user": "user@email.com",
+        "password": "password"
+    },
+
+    "backup_count" : 100,
+    "backup_path" : "/path/to/backup/dir/on/server/",
+
+    "profiles": [
+        {
+            "username": "user",
+            "hostname": "host-machine-name",
+            "dirs": [ "/dir/to/backup/",
+                      "/another/dir/to/backup/",
+                      "/as/many/as/you/want/" ]
+        }
+    ]
+}

@@ -52,7 +52,7 @@ def get_process_lock( process_name ):
     try:
         lock_socket.bind('\0' + process_name)
     except socket.error:
-        logging.error( 'instance of ezbackup allready running' )
+        logging.error( 'ERROR instance of ezbackup allready running' )
         sys.exit()
 
 def send_email(login, to, subject='', message=''):
@@ -105,14 +105,12 @@ def run_rsync(config, profile, flags, path):
 
     command = ['rsync'] + flags + [source, target]
 
-    logging.info('Running username:%s host:%s dir:%s' % ( profile['username'], 
-                                                          profile['hostname'],
-                                                          path ) )
+    logging.info('RUN %s@%s:%s' % ( profile['username'], profile['hostname'], path ) )
     starttime = time.time()
     returncode = subprocess.call(command)
     endtime = time.time()
     if returncode != 0:
-        logging.error('%s\nReturn code: %d' % (' '.join(command), returncode))
+        logging.error('FAIL %s\nReturn code: %d' % (' '.join(command), returncode))
 
     if returncode == 0:
         cwd = os.getcwd()
@@ -136,7 +134,7 @@ def run_rsync(config, profile, flags, path):
 
         os.chdir( cwd )
 
-    logging.info('PASS Complete. Elapsed time: %0.2f seconds', endtime - starttime)
+    logging.info('PASS Elapsed time: %0.2f seconds', endtime - starttime)
     return returncode == 0
 
 def init_logging():
@@ -149,6 +147,7 @@ def init_logging():
 if __name__ == '__main__':
     init_logging()
     get_process_lock( 'ezbackup' )
+    logging.info( 'START' )
     config = json.loads(open(CONFIG_FILE).read())
     args = parse_args([p['username'] for p in config['profiles']])
 
@@ -177,9 +176,7 @@ if __name__ == '__main__':
             try:
                 success = run_rsync(config, profile, flags, path) and success
             except:
-                logging.error('FAIL username:%s host:%s dir:%s' % ( profile['username'], 
-                                                                    profile['hostname'],
-                                                                    path ) )
+                logging.error( 'FAIL' ) #TODO - add exception info
 
     if args.email:
         send_email(
@@ -190,4 +187,5 @@ if __name__ == '__main__':
 
     # Delete junk dir with all the purged backups
     shutil.rmtree( junkDirPath )
+    logging.info( 'DONE' )
 

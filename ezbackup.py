@@ -11,8 +11,8 @@ import time
 import shutil
 from datetime import datetime
 
-CONFIG_FILE = 'config.json'
-LOG_FILE = 'ezbackup.log'
+CONFIG_FILE = '/etc/ezbackup/config.json'
+LOG_FILE = '/var/log/ezbackup.log'
 
 rsync_flags = [ "--archive",
                 "--one-file-system",
@@ -125,13 +125,13 @@ def run_rsync(config, profile, flags, path):
 
         os.chdir( cwd )
 
-    logging.info('Complete. Elapsed time: %0.2f seconds', endtime - starttime)
+    logging.info('PASS Complete. Elapsed time: %0.2f seconds', endtime - starttime)
     return returncode == 0
 
 def init_logging():
     logging.basicConfig(
         filename=LOG_FILE,
-        filemode='w',
+        filemode='a',
         level=logging.DEBUG,
         format='[ezbackup] %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -162,7 +162,12 @@ if __name__ == '__main__':
     success = True
     for profile in profiles:
         for path in profile[ 'dirs' ]:
-            success = run_rsync(config, profile, flags, path) and success
+            try:
+                success = run_rsync(config, profile, flags, path) and success
+            except:
+                logging.error('FAIL username:%s host:%s dir:%s' % ( profile['username'], 
+                                                                    profile['hostname'],
+                                                                    path ) )
 
     if args.email:
         send_email(

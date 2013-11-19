@@ -9,6 +9,8 @@ import smtplib
 import subprocess
 import time
 import shutil
+import socket
+import sys
 from datetime import datetime
 
 CONFIG_FILE = '/etc/ezbackup/config.json'
@@ -43,6 +45,15 @@ def parse_args(usernames):
     parser.add_argument('-d', '--dry', help='Dry run', action='store_true')
     parser.add_argument('-v', '--verbose', help='Verbose', action='store_true')
     return parser.parse_args()
+
+def get_process_lock( process_name ):
+    global lock_socket
+    lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    try:
+        lock_socket.bind('\0' + process_name)
+    except socket.error:
+        logging.error( 'instance of ezbackup allready running' )
+        sys.exit()
 
 def send_email(login, to, subject='', message=''):
     """login = {user, password, server, port=587}"""
@@ -133,10 +144,11 @@ def init_logging():
         filename=LOG_FILE,
         filemode='a',
         level=logging.DEBUG,
-        format='[ezbackup] %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+        format='[ezbackup-%(process)d] %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 if __name__ == '__main__':
     init_logging()
+    get_process_lock( 'ezbackup' )
     config = json.loads(open(CONFIG_FILE).read())
     args = parse_args([p['username'] for p in config['profiles']])
 
